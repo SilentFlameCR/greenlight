@@ -31,10 +31,23 @@ export default function TextForm({ id, value, mutation: useUpdateSiteSettingsAPI
 
   const { methods, fields } = useTextForm({ defaultValues: { value } });
 
-  // Function to clear the form
   const clearForm = () => {
-    methods.reset({ value: '' });
-    toast.dismiss(maintenanceBannerId);
+    const newValue = '';
+
+    updateSiteSettingsAPI.mutate({ value: newValue }, {
+      onSuccess: () => {
+        toast.dismiss(maintenanceBannerId);
+        // need to wait for toast onClose callback that runs after toast.dismiss to set cookie before we can remove and reset it
+        setTimeout(() => {
+          localStorage.removeItem('maintenanceClosedAt');
+          methods.reset({ value: newValue });
+        }, 1000);
+      },
+      onError: (error) => {
+        // handle error
+        console.log(error);
+      }
+    });
   };
 
   return (
@@ -45,13 +58,13 @@ export default function TextForm({ id, value, mutation: useUpdateSiteSettingsAPI
         type="text"
         noLabel
       />
-      <Button id={`${id}-clear-btn`} className="mb-2 float-end" variant="brand" onClick={clearForm} disabled={updateSiteSettingsAPI.isLoading}>
-        {updateSiteSettingsAPI.isLoading && <Spinner className="me-2" />}
-        { t('admin.site_settings.administration.clear_banner') }
-      </Button>
-      <Button id={`${id}-submit-btn`} className="mb-2 float-end me-2" variant="brand" type="submit" disabled={updateSiteSettingsAPI.isLoading}>
+      <Button id={`${id}-submit-btn`} className="mb-2 float-end" variant="brand" type="submit" disabled={updateSiteSettingsAPI.isLoading}>
         {updateSiteSettingsAPI.isLoading && <Spinner className="me-2" />}
         { t('admin.site_settings.administration.set_text') }
+      </Button>
+      <Button id={`${id}-clear-btn`} className="mb-2 float-end me-2" variant="brand-outline" onClick={clearForm} disabled={updateSiteSettingsAPI.isLoading}>
+        {updateSiteSettingsAPI.isLoading && <Spinner className="me-2" />}
+        { t('admin.site_settings.administration.clear_banner') }
       </Button>
     </Form>
   );
